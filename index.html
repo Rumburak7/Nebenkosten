@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nebenkostenabrechnung - Programm von Adam Bryks 2026</title>
+<meta name="author" content="Adam Bryks">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="ikona-192.png">
+<meta name="theme-color" content="#2f5d50">
+<style>
+:root{--bg:#f1f3ef;--panel:#fff;--ink:#1d2a25;--mute:#5f6f68;--line:#d6ddd8;--acc:#2f5d50;--acc2:#c4793a;--hov:#e7efe9;--red:#b3261e;--grn:#1f7a3a;--shadow:0 2px 8px rgba(20,40,30,.07)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,"Segoe UI",Arial,sans-serif}
+button,input,select{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:14px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap;position:sticky;top:0;z-index:5}
+.brand{display:flex;flex-direction:column;line-height:1.15;margin-right:auto}
+.brand b{font-size:21px}
+.brand .author{color:#1a9c0a;font-weight:700;font-size:12px}
+.btn{height:38px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel);cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--hov)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.sm{height:30px;padding:0 10px;font-size:13.5px}
+.btn.x{border:0;background:none;color:var(--red);font-size:17px;height:30px;padding:0 6px}
+select.yr{height:38px;border:1px solid var(--line);border-radius:9px;padding:0 8px;background:var(--panel);font-weight:600}
+nav{display:flex;gap:6px;padding:12px 20px 0;max-width:1300px;margin:0 auto;flex-wrap:wrap}
+nav button{border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;background:#e4e9e5;padding:10px 18px;cursor:pointer;font-weight:600;color:var(--mute)}
+nav button.on{background:var(--panel);color:var(--acc)}
+nav button .n{display:inline-block;background:var(--acc);color:#fff;border-radius:50%;width:22px;height:22px;line-height:22px;text-align:center;font-size:12px;margin-right:6px}
+nav button:not(.on) .n{background:#9aaba3}
+main{max-width:1300px;margin:0 auto;padding:0 20px 30px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:18px 20px;box-shadow:var(--shadow)}
+h2{margin:0 0 4px;font-size:20px}
+h3{margin:22px 0 8px;font-size:16px}
+.desc{color:var(--mute);font-size:13.5px;margin:0 0 12px}
+table{border-collapse:collapse;width:100%}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:12.5px;color:var(--mute);font-weight:600;background:#f6f8f6;white-space:nowrap}
+td.r,th.r{text-align:right}
+td input,td select{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:#fbfcfb;min-width:60px}
+td input.num{text-align:right}
+td input:focus,td select:focus{outline:2px solid #8fb9a8;border-color:var(--acc)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 16px}
+.grid2 label{display:flex;flex-direction:column;font-size:12.5px;color:var(--mute);gap:3px}
+.grid2 input{border:1px solid var(--line);border-radius:7px;padding:8px;background:#fbfcfb;font-size:15px;color:var(--ink)}
+.sum{font-weight:700;background:#f6f8f6}
+.pos{color:var(--red);font-weight:700}.neg{color:var(--grn);font-weight:700}
+.hint{background:#fff6e6;border:1px solid #efd3a4;color:#5b3c0b;border-radius:10px;padding:9px 12px;margin:0 0 14px;font-size:13.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.warn{background:#fdecea;border:1px solid #f1b5ae;color:#7b1d15;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:13.5px}
+.ok{background:#e9f6ec;border:1px solid #b5dcbe;color:#14532d;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:13.5px}
+.sub td{background:#fafbfa;font-size:13px}
+.verb{display:flex;flex-wrap:wrap;gap:6px 12px;padding:4px 0}
+.verb label{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--mute)}
+.verb input{width:100px}
+.res{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin:12px 0}
+.rc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fbfcfb}
+.rc b{font-size:16px}.rc .big{font-size:22px;margin:4px 0}
+.scroll{overflow-x:auto}
+footer{text-align:center;color:var(--mute);font-size:12px;padding:8px 0 24px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1d2a25;color:#fff;padding:10px 18px;border-radius:10px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+#print{display:none}
+/* ---------- Druck: ein Brief pro Mieter ---------- */
+.letter{font:11pt/1.4 Arial,sans-serif;color:#000;padding:0}
+.letter h1{font-size:15pt;margin:18px 0 4px}
+.letter table{width:100%;border-collapse:collapse;margin:10px 0}
+.letter th,.letter td{border-bottom:1px solid #999;padding:4px 5px;font-size:9.5pt;background:none;color:#000}
+.letter th{border-bottom:1.5px solid #000;font-weight:700}
+.letter td:last-child{white-space:nowrap}
+.letter .tot td{border-top:1.5px solid #000;font-weight:700;border-bottom:0}
+.letter .from{font-size:8pt;text-decoration:underline;margin-bottom:6px}
+.letter .addr{min-height:70px;margin-bottom:20px}
+.letter .meta{display:flex;justify-content:space-between;gap:20px}
+.letter .res2{font-size:12pt;font-weight:700;border:1.5px solid #000;padding:8px 10px;margin:12px 0}
+.letter small{font-size:8.5pt;color:#333}
+@media print{
+  @page{size:A4;margin:16mm 16mm 14mm 20mm}
+  body{background:#fff}
+  header,nav,main,footer,.toast{display:none!important}
+  #print{display:block}
+  .letter+.letter{page-break-before:always}
+}
+@media (max-width:700px){header,nav,main{padding-left:10px;padding-right:10px}.card{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>🏠 Nebenkostenabrechnung</b><span class="author">Programm: Adam Bryks 2026</span></div>
+  <label style="font-size:13px;color:var(--mute)">Jahr <select class="yr" id="yr"></select></label>
+  <button class="btn" id="btnNewYear" title="Neues Abrechnungsjahr: Wohnungen, Mieter und Kostenarten werden übernommen, Beträge geleert">＋ Neues Jahr</button>
+  <button class="btn" id="btnSave" title="Alle Daten als Datei sichern (Ordner Downloads)">💾 Sichern</button>
+  <button class="btn" id="btnLoad" title="Daten aus einer Sicherungsdatei laden">📂 Laden</button>
+  <input type="file" id="file" accept=".json" hidden>
+</header>
+<nav id="tabs"></nav>
+<main><div class="card" id="page"></div></main>
+<footer>Nebenkostenabrechnung · Programm: Adam Bryks 2026 · Die Daten bleiben nur in diesem Browser auf diesem Computer - bitte regelmäßig „💾 Sichern“. Hilfsmittel zum Rechnen, keine Rechtsberatung.</footer>
+<div id="print"></div>
+<div class="toast" id="toast"></div>
+<script>
+/* Nebenkostenabrechnung - Programm von Adam Bryks 2026. Daten nur im Browser (localStorage) + Sicherung als Datei. */
+'use strict';
+const KEY = 'nebenkosten_v1';
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const num = (s) => { if (typeof s === 'number') return isFinite(s) ? s : 0; s = String(s || '').trim().replace(/\s|€/g, ''); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); const v = parseFloat(s); return isFinite(v) ? v : 0; };
+const fmt = (v, d = 2) => (Math.round(v * 10 ** d) / 10 ** d).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+const eur = (v) => fmt(v) + ' €';
+const fmtIn = (v, d = 2) => v ? fmt(v, d) : '';
+const dDE = (iso) => { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '.' + m + '.' + y; };
+const day = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 864e5;
+let toastT = 0; function toast(t, ms) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), ms || 2500); }
+
+const KEYS = { flaeche: 'Wohnfläche (m²)', pers: 'Personen', einh: 'Wohneinheiten (gleich)', verb: 'Verbrauch (Zähler)', gem: 'Teils Fläche / teils Verbrauch', direkt: 'Direkt je Mieter (€)' };
+function costTypes(sample) {
+  const K = (name, key, betrag, extra) => Object.assign({ id: uid(), name, key, betrag: sample ? betrag : 0, pct: 30, unit: '' }, extra || {});
+  return [
+    K('Grundsteuer', 'flaeche', 612.40), K('Wasser / Abwasser', 'verb', 1840.00, { unit: 'm³' }), K('Niederschlagswasser', 'flaeche', 186.00),
+    K('Müllabfuhr', 'pers', 742.80), K('Straßenreinigung', 'flaeche', 98.50), K('Gebäudeversicherung', 'flaeche', 1120.00), K('Haftpflichtversicherung', 'flaeche', 145.00),
+    K('Allgemeinstrom (Treppenhaus, Keller)', 'einh', 236.20), K('Schornsteinfeger', 'einh', 168.00), K('Gartenpflege', 'flaeche', 0), K('Hausreinigung', 'flaeche', 0),
+    K('Heizung und Warmwasser', 'gem', 6480.00, { pct: 30, unit: 'Einheiten' }), K('Kabel-TV / Antenne', 'einh', 0)
+  ];
+}
+function sampleYear(y) {
+  const W = (name, m2) => ({ id: uid(), name, m2 });
+  const whg = [W('EG links', 85), W('EG rechts', 72), W('OG links', 85), W('OG rechts', 72)];
+  const kosten = costTypes(true);
+  const wasser = kosten[1].id, hz = kosten[11].id;
+  const M = (name, w, pers, vz, von, bis, vW, vH) => ({ id: uid(), name, whg: w.id, pers, vz, von, bis, mon: null, verb: { [wasser]: vW, [hz]: vH }, direkt: {} });
+  const mieter = [
+    M('Familie Müller', whg[0], 4, 280, '', '', 168.4, 1520),
+    M('Familie Schmidt', whg[1], 2, 230, '', '', 92.1, 1190),
+    M('Familie Wagner', whg[2], 3, 220, '', y + '-06-30', 61.0, 640),
+    M('Familie Becker', whg[3], 2, 260, '', '', 88.5, 1370),
+    M('Frau Klein', whg[2], 1, 160, y + '-08-01', '', 21.3, 410)
+  ];
+  return { from: y + '-01-01', to: y + '-12-31', sample: true, whg, mieter, kosten };
+}
+function load() { try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d && d.years && Object.keys(d.years).length) return d; } catch (e) {} const y = String(new Date().getFullYear() - 1); return { v: 1, cur: y, years: { [y]: sampleYear(y) }, haus: { name: 'Maria Beispiel', str: 'Musterstraße 1', ort: '12345 Musterstadt', tel: '', bank: '' }, backup: 0, changed: 0 }; }
+let DB = load();
+const Y = () => DB.years[DB.cur];
+function save() { DB.changed = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { toast('⚠ Speichern im Browser nicht möglich - bitte „Sichern“!', 5000); } }
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+
+// ---------- Rechnen ----------
+function periodDays(y) { return y.from && y.to ? day(y.to) - day(y.from) + 1 : 365; }
+function tenantDays(y, m) { if (!y.from || !y.to) return 0; const a = Math.max(day(y.from), m.von ? day(m.von) : -1e9), b = Math.min(day(y.to), m.bis ? day(m.bis) : 1e9); return Math.max(0, b - a + 1); }
+function months(y, m) { return m.mon != null && m.mon !== '' ? num(m.mon) : Math.round(tenantDays(y, m) / periodDays(y) * 12 * 10) / 10; }
+function calc(y) {
+  const P = periodDays(y), wById = Object.fromEntries(y.whg.map(w => [w.id, w]));
+  const A = y.whg.reduce((s, w) => s + num(w.m2), 0), nW = y.whg.length;
+  const T = y.mieter.map(m => ({ m, days: tenantDays(y, m), f: tenantDays(y, m) / P, m2: num((wById[m.whg] || {}).m2), shares: {}, info: {}, total: 0 }));
+  const persDays = T.reduce((s, t) => s + num(t.m.pers) * t.days, 0);
+  const rows = [];
+  for (const c of y.kosten) {
+    const betrag = c.key === 'direkt' ? T.reduce((s, t) => s + num((t.m.direkt || {})[c.id]), 0) : num(c.betrag);
+    const vSum = T.reduce((s, t) => s + num((t.m.verb || {})[c.id]), 0);
+    let given = 0; const errs = [];
+    for (const t of T) {
+      let s = 0, info = '';
+      const fl = (b) => A > 0 ? b * t.m2 * t.f / A : 0, flI = () => `${fmt(t.m2)} m² von ${fmt(A)} m²` + (t.days < P ? ` · ${t.days}/${P} Tage` : '');
+      const vb = (b) => vSum > 0 ? b * num((t.m.verb || {})[c.id]) / vSum : 0, vbI = () => `${fmt(num((t.m.verb || {})[c.id]), 2)} von ${fmt(vSum, 2)} ${esc(c.unit || '')}`;
+      if (c.key === 'flaeche') { s = fl(betrag); info = flI(); }
+      else if (c.key === 'einh') { s = nW ? betrag * t.f / nW : 0; info = `1 von ${nW} Wohnungen` + (t.days < P ? ` · ${t.days}/${P} Tage` : ''); }
+      else if (c.key === 'pers') { s = persDays ? betrag * num(t.m.pers) * t.days / persDays : 0; info = `${num(t.m.pers)} Pers. × ${t.days} Tage von ${fmt(persDays, 0)} Personentagen`; }
+      else if (c.key === 'verb') { s = vb(betrag); info = vbI(); }
+      else if (c.key === 'gem') { const p = Math.min(100, Math.max(0, num(c.pct))) / 100; s = fl(betrag * p) + vb(betrag * (1 - p)); info = `${fmt(p * 100, 0)} % nach Fläche (${flI()}) + ${fmt(100 - p * 100, 0)} % nach Verbrauch (${vbI()})`; }
+      else if (c.key === 'direkt') { s = num((t.m.direkt || {})[c.id]); info = 'direkt zugeordnet'; }
+      s = Math.round(s * 100) / 100;
+      t.shares[c.id] = s; t.info[c.id] = info; t.total += s; given += s;
+    }
+    if ((c.key === 'verb' || c.key === 'gem') && betrag > 0 && vSum <= 0) errs.push('Verbrauchswerte fehlen');
+    if ((c.key === 'flaeche' || c.key === 'gem') && betrag > 0 && A <= 0) errs.push('Wohnflächen fehlen');
+    rows.push({ c, betrag, vermieter: Math.round((betrag - given) * 100) / 100, errs });
+  }
+  for (const t of T) { t.total = Math.round(t.total * 100) / 100; t.mon = months(y, t.m); t.vz = Math.round(num(t.m.vz) * t.mon * 100) / 100; t.diff = Math.round((t.total - t.vz) * 100) / 100; }
+  const total = rows.reduce((s, r) => s + r.betrag, 0), verm = rows.reduce((s, r) => s + r.vermieter, 0);
+  return { P, A, nW, T, rows, total, verm, persDays };
+}
+
+// ---------- Seiten ----------
+let TAB = 0;
+const TABS = ['Haus & Wohnungen', 'Mieter', 'Kosten', 'Ergebnis & Druck'];
+function renderTabs() { $('#tabs').innerHTML = TABS.map((t, i) => `<button class="${i === TAB ? 'on' : ''}" data-tab="${i}"><span class="n">${i + 1}</span>${t}</button>`).join(''); }
+function renderYears() { $('#yr').innerHTML = Object.keys(DB.years).sort().reverse().map(y => `<option${y === DB.cur ? ' selected' : ''}>${y}</option>`).join(''); }
+function sampleHint() { return Y().sample ? `<div class="hint">ℹ️ Das sind <b>Beispielzahlen</b>, damit man sieht, wie es funktioniert. <button class="btn sm" data-act="clear">Leer beginnen</button> (Kostenarten bleiben, Namen und Beträge werden gelöscht)</div>` : ''; }
+function render() {
+  renderTabs(); renderYears();
+  const y = Y(), h = DB.haus;
+  let s = sampleHint();
+  if (TAB === 0) {
+    s += `<h2>Haus und Abrechnungszeitraum</h2><p class="desc">Diese Angaben stehen oben auf jeder Abrechnung (Absender).</p>
+    <div class="grid2">
+      <label>Vermieter (Name)<input data-h="name" value="${esc(h.name)}" placeholder="z. B. Maria Beispiel"></label>
+      <label>Straße und Hausnummer<input data-h="str" value="${esc(h.str)}"></label>
+      <label>PLZ und Ort<input data-h="ort" value="${esc(h.ort)}"></label>
+      <label>Telefon (optional)<input data-h="tel" value="${esc(h.tel)}"></label>
+      <label>Bankverbindung für Nachzahlungen (IBAN, optional)<input data-h="bank" value="${esc(h.bank)}"></label>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <label>Abrechnungszeitraum von<input type="date" data-y="from" value="${esc(y.from)}"></label>
+      <label>bis<input type="date" data-y="to" value="${esc(y.to)}"></label>
+    </div>
+    <h3>Wohnungen</h3><p class="desc">Jede Wohnung im Haus mit Wohnfläche - auch wenn sie zeitweise leer stand (der Leerstand zahlt dann der Vermieter).</p>
+    <div class="scroll"><table><tr><th>Bezeichnung</th><th class="r">Wohnfläche m²</th><th></th></tr>
+    ${y.whg.map(w => `<tr><td><input data-w="${w.id}:name" value="${esc(w.name)}"></td><td><input class="num" data-w="${w.id}:m2" value="${fmtIn(num(w.m2))}" inputmode="decimal"></td><td><button class="btn x" data-delw="${w.id}" title="Wohnung löschen">✕</button></td></tr>`).join('')}
+    <tr class="sum"><td>Summe (${y.whg.length} Wohnungen)</td><td class="r" id="sumA">${fmt(y.whg.reduce((a, w) => a + num(w.m2), 0))} m²</td><td></td></tr></table></div>
+    <button class="btn sm" data-act="addw" style="margin-top:8px">＋ Wohnung</button>`;
+  }
+  if (TAB === 1) {
+    s += `<h2>Mieter</h2><p class="desc">Jede Mietpartei, die im Abrechnungszeitraum gewohnt hat. Bei Ein- oder Auszug im Jahr das Datum eintragen - dann wird nur die Zeit berechnet, in der sie dort gewohnt hat. Leer = ganzes Jahr.</p>
+    <div class="scroll"><table><tr><th>Name</th><th>Wohnung</th><th>Einzug</th><th>Auszug</th><th class="r">Personen</th><th class="r">Vorauszahlung €/Monat</th><th class="r" title="Wird aus Ein-/Auszug berechnet, kann überschrieben werden">Monate gezahlt</th><th></th></tr>
+    ${y.mieter.map(m => `<tr><td><input data-m="${m.id}:name" value="${esc(m.name)}" placeholder="Name"></td>
+      <td><select data-m="${m.id}:whg">${y.whg.map(w => `<option value="${w.id}"${w.id === m.whg ? ' selected' : ''}>${esc(w.name)}</option>`).join('')}</select></td>
+      <td><input type="date" data-m="${m.id}:von" value="${esc(m.von)}"></td><td><input type="date" data-m="${m.id}:bis" value="${esc(m.bis)}"></td>
+      <td><input class="num" data-m="${m.id}:pers" value="${fmtIn(num(m.pers), 0)}" inputmode="numeric" style="max-width:80px"></td>
+      <td><input class="num" data-m="${m.id}:vz" value="${fmtIn(num(m.vz))}" inputmode="decimal"></td>
+      <td><input class="num" data-m="${m.id}:mon" value="${m.mon != null && m.mon !== '' ? fmt(num(m.mon), 1) : ''}" placeholder="${fmt(months(y, m), 1)}" inputmode="decimal" style="max-width:90px"></td>
+      <td><button class="btn x" data-delm="${m.id}" title="Mieter löschen">✕</button></td></tr>`).join('')}
+    </table></div><button class="btn sm" data-act="addm" style="margin-top:8px">＋ Mieter</button>
+    <p class="desc" style="margin-top:10px">„Monate gezahlt“: grau = automatisch aus Ein-/Auszug. Nur ausfüllen, wenn tatsächlich anders gezahlt wurde.</p>`;
+  }
+  if (TAB === 2) {
+    const R = calc(y);
+    s += `<h2>Kosten ${esc(DB.cur)}</h2><p class="desc">Gesamtbeträge laut Rechnungen/Bescheiden für das ganze Haus. Der <b>Verteilerschlüssel</b> sagt, wie geteilt wird. Bei „Verbrauch“ erscheinen darunter Felder für die Zählerstände (Verbrauch je Mieter).</p>
+    <div class="scroll"><table><tr><th>Kostenart</th><th class="r">Gesamtbetrag €</th><th>Verteilerschlüssel</th><th></th></tr>
+    ${y.kosten.map(c => {
+      let r = `<tr><td><input data-c="${c.id}:name" value="${esc(c.name)}"></td>
+        <td>${c.key === 'direkt' ? `<span style="display:block;text-align:right;padding-right:8px">${fmt(R.rows.find(x => x.c === c).betrag)}</span>` : `<input class="num" data-c="${c.id}:betrag" value="${fmtIn(num(c.betrag))}" inputmode="decimal">`}</td>
+        <td><select data-c="${c.id}:key">${Object.entries(KEYS).map(([k, t]) => `<option value="${k}"${k === c.key ? ' selected' : ''}>${t}</option>`).join('')}</select></td>
+        <td><button class="btn x" data-delc="${c.id}" title="Kostenart löschen">✕</button></td></tr>`;
+      if (c.key === 'verb' || c.key === 'gem' || c.key === 'direkt') {
+        r += `<tr class="sub"><td colspan="4"><div class="verb">`;
+        if (c.key === 'gem') r += `<label>Anteil nach Fläche <input class="num" data-c="${c.id}:pct" value="${fmt(num(c.pct), 0)}" style="width:60px"> %</label><span style="color:var(--mute);font-size:12.5px;align-self:center">(Heizkosten: meist 30 % Fläche / 70 % Verbrauch, erlaubt 30-50 % Fläche)</span><br style="flex-basis:100%">`;
+        if (c.key !== 'direkt') r += `<label>Einheit <input data-c="${c.id}:unit" value="${esc(c.unit)}" placeholder="m³ / kWh" style="width:90px"></label>`;
+        for (const m of y.mieter) r += c.key === 'direkt'
+          ? `<label>${esc(m.name || '?')} <input class="num" data-d="${m.id}:${c.id}" value="${fmtIn(num((m.direkt || {})[c.id]))}" inputmode="decimal"> €</label>`
+          : `<label>${esc(m.name || '?')} <input class="num" data-v="${m.id}:${c.id}" value="${fmtIn(num((m.verb || {})[c.id]), 2)}" inputmode="decimal"> ${esc(c.unit || '')}</label>`;
+        r += `</div></td></tr>`;
+      }
+      return r;
+    }).join('')}
+    <tr class="sum"><td>Summe</td><td class="r" id="sumK">${eur(R.total)}</td><td colspan="2"></td></tr></table></div>
+    <button class="btn sm" data-act="addc" style="margin-top:8px">＋ Kostenart</button>
+    <p class="desc" style="margin-top:10px">Umlagefähig sind nur Betriebskosten (§ 2 BetrKV) - z. B. keine Reparaturen und keine Verwaltungskosten. Heizkosten nach Heizkostenverordnung: 50-70 % nach Verbrauch.</p>`;
+  }
+  if (TAB === 3) {
+    const R = calc(y);
+    const warn = [];
+    for (const r of R.rows) for (const e of r.errs) warn.push(`„${esc(r.c.name)}“: ${e}`);
+    for (const t of R.T) if (!t.days) warn.push(`${esc(t.m.name || '?')}: wohnte nicht im Abrechnungszeitraum (Ein-/Auszug prüfen)`);
+    const check = Math.abs(R.T.reduce((a, t) => a + t.total, 0) + R.verm - R.total) < 0.05;
+    s += `<h2>Ergebnis ${esc(DB.cur)}</h2><p class="desc">Zeitraum ${dDE(y.from)} - ${dDE(y.to)} (${R.P} Tage). Rot = Nachzahlung, grün = Guthaben.</p>
+    ${warn.map(w => `<div class="warn">⚠ ${w}</div>`).join('')}
+    <div class="res">${R.T.map((t, i) => `<div class="rc"><b>${esc(t.m.name || '?')}</b><div style="font-size:12.5px;color:var(--mute)">${esc((y.whg.find(w => w.id === t.m.whg) || {}).name || '')} · ${t.days} Tage</div>
+      <div class="big ${t.diff > 0 ? 'pos' : 'neg'}">${t.diff > 0 ? 'Nachzahlung ' + eur(t.diff) : 'Guthaben ' + eur(-t.diff)}</div>
+      <div style="font-size:13px">Kosten ${eur(t.total)} − Vorauszahlungen ${eur(t.vz)}</div>
+      <button class="btn sm" data-print="${i}" style="margin-top:8px">🖨 Abrechnung drucken</button></div>`).join('')}</div>
+    <button class="btn pri" data-print="all">🖨 Alle Abrechnungen drucken</button>
+    <span class="desc" style="margin-left:8px">Im Druckfenster „Als PDF speichern“ wählen, wenn man sie per E-Mail schicken möchte.</span>
+    <h3>Übersicht</h3><div class="scroll"><table><tr><th>Kostenart</th><th class="r">Gesamt</th>${R.T.map(t => `<th class="r">${esc(t.m.name || '?')}</th>`).join('')}<th class="r" title="Leerstand und Rundung">Vermieter</th></tr>
+    ${R.rows.filter(r => r.betrag).map(r => `<tr><td>${esc(r.c.name)}<br><small style="color:var(--mute)">${KEYS[r.c.key]}</small></td><td class="r">${fmt(r.betrag)}</td>${R.T.map(t => `<td class="r">${fmt(t.shares[r.c.id])}</td>`).join('')}<td class="r">${fmt(r.vermieter)}</td></tr>`).join('')}
+    <tr class="sum"><td>Summe Kosten</td><td class="r">${fmt(R.total)}</td>${R.T.map(t => `<td class="r">${fmt(t.total)}</td>`).join('')}<td class="r">${fmt(R.verm)}</td></tr>
+    <tr><td>− Vorauszahlungen</td><td></td>${R.T.map(t => `<td class="r">${fmt(t.vz)}<br><small style="color:var(--mute)">${fmt(t.mon, 1)} × ${fmt(num(t.m.vz))}</small></td>`).join('')}<td></td></tr>
+    <tr class="sum"><td>Nachzahlung (+) / Guthaben (−)</td><td></td>${R.T.map(t => `<td class="r ${t.diff > 0 ? 'pos' : 'neg'}">${fmt(t.diff)}</td>`).join('')}<td></td></tr></table></div>
+    <div class="${check ? 'ok' : 'warn'}">${check ? '✓ Kontrolle: Anteile der Mieter + Vermieteranteil = Gesamtkosten ' + eur(R.total) : '⚠ Kontrolle stimmt nicht - bitte Eingaben prüfen'}</div>
+    <p class="desc">„Vermieter“ = Anteil für Leerstand (Wohnung stand leer) und Rundungscent - den zahlt der Vermieter selbst.</p>`;
+  }
+  $('#page').innerHTML = s;
+}
+// nur Summen neu, ohne die Eingabefelder neu zu zeichnen (Cursor bleibt)
+function refreshSums() { const y = Y(); const a = $('#sumA'); if (a) a.textContent = fmt(y.whg.reduce((s, w) => s + num(w.m2), 0)) + ' m²'; const k = $('#sumK'); if (k) k.textContent = eur(calc(y).total); }
+
+// ---------- Eingaben ----------
+document.addEventListener('change', (e) => {
+  const el = e.target, y = Y(), v = el.value, d = el.dataset; let re = false;
+  if (el.id === 'yr') { DB.cur = v; save(); render(); return; }
+  if (el.id === 'file') return;
+  if (d.h) DB.haus[d.h] = v;
+  else if (d.y) { y[d.y] = v; re = true; }
+  else if (d.w) { const [id, k] = d.w.split(':'), w = y.whg.find(x => x.id === id); if (w) w[k] = k === 'm2' ? num(v) : v; }
+  else if (d.m) { const [id, k] = d.m.split(':'), m = y.mieter.find(x => x.id === id); if (m) { m[k] = ['pers', 'vz'].includes(k) ? num(v) : k === 'mon' ? (v.trim() === '' ? null : num(v)) : v; if (k === 'von' || k === 'bis' || k === 'mon') re = true; } }
+  else if (d.c) { const [id, k] = d.c.split(':'), c = y.kosten.find(x => x.id === id); if (c) { c[k] = ['betrag', 'pct'].includes(k) ? num(v) : v; if (k === 'key') re = true; } }
+  else if (d.v) { const [mid, cid] = d.v.split(':'), m = y.mieter.find(x => x.id === mid); if (m) { m.verb = m.verb || {}; m.verb[cid] = num(v); } }
+  else if (d.d) { const [mid, cid] = d.d.split(':'), m = y.mieter.find(x => x.id === mid); if (m) { m.direkt = m.direkt || {}; m.direkt[cid] = num(v); re = true; } }
+  else return;
+  if (el.classList.contains('num') && el.value.trim()) el.value = fmt(num(v), d.m && d.m.endsWith(':pers') ? 0 : d.c && d.c.endsWith(':pct') ? 0 : d.m && d.m.endsWith(':mon') ? 1 : 2);
+  save(); if (re) render(); else refreshSums();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('td input, .grid2 input')) e.target.blur(); });
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return; const y = Y(), d = b.dataset;
+  if (d.tab) { TAB = +d.tab; render(); window.scrollTo(0, 0); return; }
+  if (d.act === 'addw') { y.whg.push({ id: uid(), name: 'Wohnung ' + (y.whg.length + 1), m2: 0 }); }
+  else if (d.act === 'addm') { y.mieter.push({ id: uid(), name: '', whg: (y.whg[0] || {}).id || '', pers: 1, vz: 0, von: '', bis: '', mon: null, verb: {}, direkt: {} }); }
+  else if (d.act === 'addc') { y.kosten.push({ id: uid(), name: 'Neue Kostenart', key: 'flaeche', betrag: 0, pct: 30, unit: '' }); }
+  else if (d.act === 'clear') {
+    if (!confirm('Beispielzahlen löschen und leer beginnen?\n\nKostenarten bleiben, Namen und Beträge werden gelöscht.')) return;
+    y.sample = false; y.whg = [1, 2, 3, 4].map(i => ({ id: uid(), name: 'Wohnung ' + i, m2: 0 }));
+    y.mieter = y.whg.map(w => ({ id: uid(), name: '', whg: w.id, pers: 1, vz: 0, von: '', bis: '', mon: null, verb: {}, direkt: {} }));
+    y.kosten = costTypes(false); if (DB.haus.name === 'Maria Beispiel') DB.haus = { name: '', str: '', ort: '', tel: '', bank: '' }; TAB = 0;
+  }
+  else if (d.delw) { if (y.mieter.some(m => m.whg === d.delw)) { toast('In dieser Wohnung sind noch Mieter eingetragen'); return; } if (!confirm('Wohnung löschen?')) return; y.whg = y.whg.filter(w => w.id !== d.delw); }
+  else if (d.delm) { const m = y.mieter.find(x => x.id === d.delm); if (!confirm('Mieter „' + (m.name || '?') + '“ löschen?')) return; y.mieter = y.mieter.filter(x => x !== m); }
+  else if (d.delc) { const c = y.kosten.find(x => x.id === d.delc); if (!confirm('Kostenart „' + c.name + '“ löschen?')) return; y.kosten = y.kosten.filter(x => x !== c); }
+  else if (d.print) { printLetters(d.print === 'all' ? null : +d.print); return; }
+  else return;
+  save(); render();
+});
+
+// ---------- Neues Jahr ----------
+$('#btnNewYear').onclick = () => {
+  const last = Object.keys(DB.years).sort().pop(), ny = String(+last + 1);
+  if (!confirm('Neues Abrechnungsjahr ' + ny + ' anlegen?\n\nWohnungen, Mieter (ohne Ausgezogene) und Kostenarten werden übernommen, Beträge und Zählerwerte geleert.')) return;
+  const o = DB.years[last], cl = JSON.parse(JSON.stringify(o));
+  cl.from = ny + '-01-01'; cl.to = ny + '-12-31'; cl.sample = false;
+  cl.mieter = cl.mieter.filter(m => !m.bis || m.bis >= cl.from).map(m => Object.assign(m, { von: m.von && m.von >= cl.from ? m.von : '', mon: null, verb: {}, direkt: {} }));
+  cl.kosten.forEach(c => { c.betrag = 0; });
+  DB.years[ny] = cl; DB.cur = ny; TAB = 2; save(); render(); toast('Jahr ' + ny + ' angelegt - jetzt die Kosten eintragen');
+};
+
+// ---------- Druck ----------
+function letterHtml(y, R, t) {
+  const h = DB.haus, w = y.whg.find(x => x.id === t.m.whg) || {}, today = new Date().toLocaleDateString('de-DE');
+  const rows = R.rows.filter(r => r.betrag && t.shares[r.c.id]);
+  const nextVz = t.days >= R.P - 1 ? Math.ceil(t.total / 12 / 5) * 5 : 0;
+  return `<div class="letter">
+    <div class="from">${esc([h.name, h.str, h.ort].filter(Boolean).join(' · '))}</div>
+    <div class="meta"><div class="addr"><b>${esc(t.m.name)}</b><br>${esc([h.str, w.name].filter(Boolean).join(', '))}<br>${esc(h.ort)}</div><div style="text-align:right">${esc([h.ort.replace(/^\d+\s*/, ''), today].filter(Boolean).join(', '))}${h.tel ? '<br>Tel. ' + esc(h.tel) : ''}</div></div>
+    <h1>Betriebskostenabrechnung ${esc(DB.cur)}</h1>
+    <div>Wohnung: <b>${esc(w.name || '')}</b> (${fmt(t.m2)} m²) · Personen: ${num(t.m.pers)}<br>
+    Abrechnungszeitraum: ${dDE(y.from)} - ${dDE(y.to)} · Ihr Nutzungszeitraum: ${t.days === R.P ? 'ganzer Zeitraum' : t.days + ' von ' + R.P + ' Tagen'}</div>
+    <p>Sehr geehrte Damen und Herren,<br>hiermit erhalten Sie die Abrechnung der Betriebskosten für den oben genannten Zeitraum.</p>
+    <table><tr><th>Kostenart</th><th style="text-align:right">Gesamtkosten Haus</th><th>Verteilung</th><th style="text-align:right">Ihr Anteil</th></tr>
+    ${rows.map(r => `<tr><td>${esc(r.c.name)}</td><td style="text-align:right">${eur(r.betrag)}</td><td>${t.info[r.c.id]}</td><td style="text-align:right">${eur(t.shares[r.c.id])}</td></tr>`).join('')}
+    <tr class="tot"><td colspan="3">Summe Ihrer Betriebskosten</td><td style="text-align:right">${eur(t.total)}</td></tr>
+    <tr><td colspan="3">abzüglich Ihrer Vorauszahlungen (${fmt(t.mon, 1)} Monate × ${eur(num(t.m.vz))})</td><td style="text-align:right">− ${eur(t.vz)}</td></tr></table>
+    <div class="res2">${t.diff > 0 ? 'Nachzahlung: ' + eur(t.diff) : t.diff < 0 ? 'Guthaben: ' + eur(-t.diff) : 'Ausgeglichen: 0,00 €'}</div>
+    <p>${t.diff > 0 ? 'Bitte überweisen Sie die Nachzahlung innerhalb von 30 Tagen' + (h.bank ? ' auf das Konto ' + esc(h.bank) : '') + '.' : t.diff < 0 ? 'Das Guthaben wird Ihnen erstattet bzw. mit der nächsten Zahlung verrechnet.' : ''}
+    ${nextVz && Math.abs(nextVz - num(t.m.vz)) >= 5 ? '<br>Vorschlag für die monatliche Vorauszahlung ab dem nächsten Monat: <b>' + eur(nextVz) + '</b>.' : ''}</p>
+    <p><small>Die Belege können nach Absprache eingesehen werden. Bei Fragen melden Sie sich gerne.</small></p>
+    <p>Mit freundlichen Grüßen<br><br>${esc(h.name)}</p></div>`;
+}
+function printLetters(i) {
+  const y = Y(), R = calc(y);
+  if (!DB.haus.name) { if (!confirm('Vermieter-Name ist leer (Seite 1). Trotzdem drucken?')) return; }
+  const list = i == null ? R.T.filter(t => t.days) : [R.T[i]];
+  $('#print').innerHTML = list.map(t => letterHtml(y, R, t)).join('');
+  window.print();
+}
+
+// ---------- Sichern / Laden ----------
+$('#btnSave').onclick = () => {
+  DB.backup = Date.now(); save();
+  const d = new Date(), p = (n) => String(n).padStart(2, '0');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(DB, null, 1)], { type: 'application/json' }));
+  a.download = `nebenkosten_${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}.json`; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); toast('Gesichert: ' + a.download + ' (Ordner Downloads)', 4500);
+};
+$('#btnLoad').onclick = () => $('#file').click();
+$('#file').onchange = async () => {
+  const f = $('#file').files[0]; $('#file').value = ''; if (!f) return;
+  try { const d = JSON.parse(await f.text()); if (!d || !d.years || !Object.keys(d.years).length) throw 0; if (!confirm('Daten aus „' + f.name + '“ laden? Die jetzigen Daten werden ersetzt.')) return; DB = d; if (!DB.years[DB.cur]) DB.cur = Object.keys(DB.years).sort().pop(); DB.haus = DB.haus || { name: '', str: '', ort: '', tel: '', bank: '' }; save(); TAB = 0; render(); toast('Geladen'); }
+  catch (e) { toast('Das ist keine Sicherungsdatei der Nebenkostenabrechnung', 4000); }
+};
+render();
+</script>
+</body>
+</html>
