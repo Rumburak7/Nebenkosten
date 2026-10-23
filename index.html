@@ -109,6 +109,16 @@ const fmt = (v, d = 2) => (Math.round(v * 10 ** d) / 10 ** d).toLocaleString('de
 const eur = (v) => fmt(v) + ' €';
 const fmtIn = (v, d = 2) => v ? fmt(v, d) : '';
 const dDE = (iso) => { if (!iso) return ''; const [y, m, d] = iso.split('-'); return d + '.' + m + '.' + y; };
+// Datum eintippen: 1.1.2025 / 01.01.25 / 1.1. (Jahr des Zeitraums) -> ISO; leer -> ''; falsch -> null
+function parseDE(t, yr) {
+  t = String(t || '').trim(); if (!t) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  const m = t.match(/^(\d{1,2})[.\/,-](\d{1,2})[.\/,-]?(\d{2,4})?$/); if (!m) return null;
+  let y = m[3] ? +m[3] : +yr; if (y < 100) y += 2000;
+  const d = +m[1], mo = +m[2], dt = new Date(Date.UTC(y, mo - 1, d));
+  if (y < 1990 || y > 2100 || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+  return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
 const day = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 864e5;
 let toastT = 0; function toast(t, ms) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), ms || 2500); }
 
@@ -139,6 +149,7 @@ function sampleYear(y) {
 }
 function load() { try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d && d.years && Object.keys(d.years).length) return d; } catch (e) {} const y = String(new Date().getFullYear() - 1); return { v: 1, cur: y, years: { [y]: sampleYear(y) }, haus: { name: 'Maria Beispiel', str: 'Musterstraße 1', ort: '12345 Musterstadt', tel: '', bank: '' }, backup: 0, changed: 0 }; }
 let DB = load();
+for (const [k, yy] of Object.entries(DB.years)) { for (const f of ['from', 'to']) if (!yy[f] || +yy[f].slice(0, 4) < 1990) yy[f] = k + (f === 'from' ? '-01-01' : '-12-31'); for (const m of yy.mieter || []) for (const f of ['von', 'bis']) if (m[f] && +m[f].slice(0, 4) < 1990) m[f] = ''; }
 const Y = () => DB.years[DB.cur];
 function save() { DB.changed = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { toast('⚠ Speichern im Browser nicht möglich - bitte „Sichern“!', 5000); } }
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
@@ -199,8 +210,8 @@ function render() {
       <label>Bankverbindung für Nachzahlungen (IBAN, optional)<input data-h="bank" value="${esc(h.bank)}"></label>
     </div>
     <div class="grid2" style="margin-top:12px">
-      <label>Abrechnungszeitraum von<input type="date" data-y="from" value="${esc(y.from)}"></label>
-      <label>bis<input type="date" data-y="to" value="${esc(y.to)}"></label>
+      <label>Abrechnungszeitraum von<input class="dt" data-y="from" value="${dDE(y.from)}" placeholder="TT.MM.JJJJ" inputmode="numeric"></label>
+      <label>bis<input class="dt" data-y="to" value="${dDE(y.to)}" placeholder="TT.MM.JJJJ" inputmode="numeric"></label>
     </div>
     <h3>Wohnungen</h3><p class="desc">Jede Wohnung im Haus mit Wohnfläche - auch wenn sie zeitweise leer stand (der Leerstand zahlt dann der Vermieter).</p>
     <div class="scroll"><table><tr><th>Bezeichnung</th><th class="r">Wohnfläche m²</th><th></th></tr>
@@ -213,7 +224,7 @@ function render() {
     <div class="scroll"><table><tr><th>Name</th><th>Wohnung</th><th>Einzug</th><th>Auszug</th><th class="r">Personen</th><th class="r">Vorauszahlung €/Monat</th><th class="r" title="Wird aus Ein-/Auszug berechnet, kann überschrieben werden">Monate gezahlt</th><th></th></tr>
     ${y.mieter.map(m => `<tr><td><input data-m="${m.id}:name" value="${esc(m.name)}" placeholder="Name"></td>
       <td><select data-m="${m.id}:whg">${y.whg.map(w => `<option value="${w.id}"${w.id === m.whg ? ' selected' : ''}>${esc(w.name)}</option>`).join('')}</select></td>
-      <td><input type="date" data-m="${m.id}:von" value="${esc(m.von)}"></td><td><input type="date" data-m="${m.id}:bis" value="${esc(m.bis)}"></td>
+      <td><input class="dt" data-m="${m.id}:von" value="${dDE(m.von)}" placeholder="ganzes Jahr" inputmode="numeric" style="max-width:130px"></td><td><input class="dt" data-m="${m.id}:bis" value="${dDE(m.bis)}" placeholder="ganzes Jahr" inputmode="numeric" style="max-width:130px"></td>
       <td><input class="num" data-m="${m.id}:pers" value="${fmtIn(num(m.pers), 0)}" inputmode="numeric" style="max-width:80px"></td>
       <td><input class="num" data-m="${m.id}:vz" value="${fmtIn(num(m.vz))}" inputmode="decimal"></td>
       <td><input class="num" data-m="${m.id}:mon" value="${m.mon != null && m.mon !== '' ? fmt(num(m.mon), 1) : ''}" placeholder="${fmt(months(y, m), 1)}" inputmode="decimal" style="max-width:90px"></td>
@@ -277,6 +288,13 @@ document.addEventListener('change', (e) => {
   const el = e.target, y = Y(), v = el.value, d = el.dataset; let re = false;
   if (el.id === 'yr') { DB.cur = v; save(); render(); return; }
   if (el.id === 'file') return;
+  if (el.classList.contains('dt')) {
+    const iso = parseDE(v, (y.from || DB.cur).slice(0, 4));
+    if (iso === null || ((d.y) && !iso)) { toast('Datum bitte so eingeben: 01.01.' + DB.cur, 3500); el.value = dDE(d.y ? y[d.y] : (y.mieter.find(x => x.id === d.m.split(':')[0]) || {})[d.m.split(':')[1]]); el.focus(); return; }
+    if (d.y) y[d.y] = iso; else { const [id, k] = d.m.split(':'), m = y.mieter.find(x => x.id === id); if (m) m[k] = iso; }
+    if (d.y && y.from && y.to && y.to < y.from) toast('⚠ „bis“ liegt vor „von“', 4000);
+    save(); render(); return;
+  }
   if (d.h) DB.haus[d.h] = v;
   else if (d.y) { y[d.y] = v; re = true; }
   else if (d.w) { const [id, k] = d.w.split(':'), w = y.whg.find(x => x.id === id); if (w) w[k] = k === 'm2' ? num(v) : v; }
